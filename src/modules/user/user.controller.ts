@@ -46,7 +46,7 @@ export class UserController {
     }
   }
 
-  @Post('/')
+  @Post('/login')
   async loginUser(
     @Body()
     data,
