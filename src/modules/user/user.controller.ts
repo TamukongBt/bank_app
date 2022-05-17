@@ -35,7 +35,7 @@ export class UserController {
   ): Promise<User> {
     try {
       if (await this.userService.userExists(data.address)) {
-        throw new Error('Email Already Exists');
+        throw new Error('USer Already Exists');
       } else {
         const user = await this.userService.createUser(data);
 
