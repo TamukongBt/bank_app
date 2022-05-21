@@ -14,8 +14,8 @@ model User {
   id             String        @id @default(uuid())
   name           String
   initialDeposit Int
-  sK             BigInt
-  pK             BigInt
+  sK             String
+  pK             String
   address        String        @unique
   date           DateTime
   password       String

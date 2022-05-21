@@ -5,15 +5,16 @@ import * as paillierBigint from 'paillier-bigint';
 import * as Carbon from "carbonjs";
 import { Routes, Route, Link } from 'react-router-dom'; 
 import Alert from './Alert';
+import * as bcrypt from 'bcryptjs';
 
 function Register(props) {
   const [amount, setAmount] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const [password, setPassword] = useState('');
+  const [pass, setPassword] = useState('');
   const [cpassword, setcPassword] = useState('');
-  const message = "Empty for now"
-  const display = "none"
+  const message = ""
+  const display = false
 
   async function paillier() {
     //   serialize BigInt to Store
@@ -40,20 +41,22 @@ function Register(props) {
       2048,
     );
     // register db 
-    const pK = serialize(publicKey)
+    const pK =serialize(publicKey)
     const sK = serialize(privateKey)
-    const pass  = password
-    const cpass  = cpassword
-    const rounds  = 5
+    const salt = bcrypt.genSaltSync(10);
+    const password = bcrypt.hashSync(pass, salt)
+
+    console.log(password)
+    
     // Hash password and check if matches  
     const date = Carbon.parse(Date.now())
     const initialDeposit = Number(amount)
-      try {
-        await axios.post("http://localhost:3000/user",{address,initialDeposit,name,sK,pK,date})
-      } catch (error) {
-        display = "display:block"
-        message= error
-      }
+    
+        await axios.post("http://localhost:3000/user",{address,initialDeposit,name,sK,pK,date,password}).catch(error => {
+          console.log(error)
+          return error.response
+        })
+     
     
   }
 
@@ -63,19 +66,23 @@ function Register(props) {
       alert('Fill the empty fields');
       return;
     }
-
-    paillier();
-    setAddress('')
-    setAmount('')
-    setName('')
-    setPassword('')
+    try {
+      paillier();
+    } catch (error) {
+      display =true
+      message= error
+    }
+    // setAddress('')
+    // setAmount('')
+    // setName('')
+    // setPassword('')
   }
 
   return (
     <div className="container">
+      <Alert color=" alert alert-danger" message={message} display={display} />
       <h3 className="text-center">Register New User</h3>
       <form className="add-form" onSubmit={onSubmit}>
-          <Alert color="alert alert-danger" message={message} display={display} />
         <div  className="form-group">
           <label>Name</label>
           <input
@@ -112,16 +119,16 @@ function Register(props) {
             type="password"
             className="form-control"
             placeholder="Choose A Password"
-            value={password}
+            value={pass}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
         <div className="form-group">
-          <label>Initial Deposit</label>
+          <label>Confirm Password</label>
           <input
             type="password"
             className="form-control"
-            placeholder="Confirm Your PAssword"
+            placeholder="Confirm Your Pa  ssword"
             value={cpassword}
             onChange={(e) => setcPassword(e.target.value)}
           />
