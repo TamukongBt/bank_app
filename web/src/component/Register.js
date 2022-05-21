@@ -2,8 +2,8 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as paillierBigint from 'paillier-bigint';
-import * as Carbon from "carbonjs";
-import { Routes, Route, Link } from 'react-router-dom'; 
+import * as Carbon from 'carbonjs';
+import { Routes, Route, Link, useRoutes, useNavigate, Navigate } from 'react-router-dom';
 import Alert from './Alert';
 import * as bcrypt from 'bcryptjs';
 
@@ -13,8 +13,10 @@ function Register(props) {
   const [address, setAddress] = useState('');
   const [pass, setPassword] = useState('');
   const [cpassword, setcPassword] = useState('');
-  const message = ""
-  const display = false
+  const [message, setMessage] = useState('');
+  const [display, setDispaly] = useState('');
+  const [state, setState] = useState('');
+ 
 
   async function paillier() {
     //   serialize BigInt to Store
@@ -25,66 +27,86 @@ function Register(props) {
       return json;
     }
 
-     //   Deserialize BigInt to Store
+    //   Deserialize BigInt to Store
     function deserialize(value) {
-        const json = JSON.parse(value, (key, value) => {
-            if (typeof value === "string" && value.startsWith('BIGINT::')) {
-              return BigInt(value.substr(8));
-            }
-            return value;
-          });
-          return json;
-      }
+      const json = JSON.parse(value, (key, value) => {
+        if (typeof value === 'string' && value.startsWith('BIGINT::')) {
+          return BigInt(value.substr(8));
+        }
+        return value;
+      });
+      return json;
+    }
 
-
-    const {publicKey,privateKey} = await paillierBigint.generateRandomKeys(
+    const { publicKey, privateKey } = await paillierBigint.generateRandomKeys(
       2048,
     );
-    // register db 
-    const pK =serialize(publicKey)
-    const sK = serialize(privateKey)
+    // register db
+    const pK = serialize(publicKey);
+    const sK = serialize(privateKey);
     const salt = bcrypt.genSaltSync(10);
-    const password = bcrypt.hashSync(pass, salt)
+    const password = bcrypt.hashSync(pass, salt);
 
-    console.log(password)
-    
-    // Hash password and check if matches  
-    const date = Carbon.parse(Date.now())
-    const initialDeposit = Number(amount)
-    
-        await axios.post("http://localhost:3000/user",{address,initialDeposit,name,sK,pK,date,password}).catch(error => {
-          console.log(error)
-          return error.response
-        })
-     
-    
+    // Hash password and check if matches
+    const date = Carbon.parse(Date.now());
+    const initialDeposit = Number(amount);
+
+    await axios
+      .post('http://localhost:3000/user', {
+        address,
+        initialDeposit,
+        name,
+        sK,
+        pK,
+        date,
+        password,
+      })
+      .catch((error) => {
+        console.log(error);
+        return error.response;
+      });
   }
 
   async function onSubmit(e) {
     e.preventDefault();
     if (!name || !amount || !address) {
-      alert('Fill the empty fields');
-      return;
+      setDispaly('true')
+      setMessage('FIll The fields')
+      return
     }
-    try {
-      paillier();
-    } catch (error) {
-      display =true
-      message= error
+    if (pass!== cpassword) {
+      setDispaly('true')
+      setMessage('Passwords Do Not Match')
+      return
+    } else {
+      try {
+        paillier();
+      } catch (error) {
+        setDispaly('true')
+        setMessage(error.response)
+      }
+      setAddress('');
+      setAmount('');
+      setName('');
+      setPassword('');
+      setcPassword('');
+      
+      return useNavigate("/login")
     }
-    // setAddress('')
-    // setAmount('')
-    // setName('')
-    // setPassword('')
+   
   }
 
   return (
+    
     <div className="container">
-      <Alert color=" alert alert-danger" message={message} display={display} />
+      <Alert
+          color=" alert alert-danger"
+          message={message}
+          display={display}
+        />
       <h3 className="text-center">Register New User</h3>
       <form className="add-form" onSubmit={onSubmit}>
-        <div  className="form-group">
-          <label>Name</label>
+        <div className="form-group">
           <input
             type="text"
             className="form-control"
@@ -94,27 +116,25 @@ function Register(props) {
           />
         </div>
         <div className="form-group">
-          <label className='formlabel'>Account Number</label>
           <input
-            type="text"
+            type="number"
             className="form-control"
-            placeholder="Enter Amount"
+            placeholder="Enter Account Number"
+            pattern=''
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
         </div>
         <div className="form-group">
-          <label>Initial Deposit</label>
           <input
             type="number"
             className="form-control"
-            placeholder="Enter Address Number"
+            placeholder="Enter your Initial Deposit"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
         <div className="form-group">
-          <label>Confirm Password</label>
           <input
             type="password"
             className="form-control"
@@ -124,11 +144,10 @@ function Register(props) {
           />
         </div>
         <div className="form-group">
-          <label>Confirm Password</label>
           <input
             type="password"
             className="form-control"
-            placeholder="Confirm Your Pa  ssword"
+            placeholder="Confirm Your Password"
             value={cpassword}
             onChange={(e) => setcPassword(e.target.value)}
           />
@@ -139,9 +158,12 @@ function Register(props) {
           value="Register Now"
         />
       </form>
-      <Link to="/">Home</Link><br/>
-      <Link to="/deposit">Deposit</Link><br/>
-      <Link to="/withdraw">Withdraw</Link><br/>
+      <Link to="/">Home</Link>
+      <br />
+      <Link to="/deposit">Deposit</Link>
+      <br />
+      <Link to="/withdraw">Withdraw</Link>
+      <br />
       <Link to="/register">Register</Link>
     </div>
   );
