@@ -7,9 +7,23 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiQuery, ApiSecurity } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { UserService } from './user.service';
+
+// My additions
+import {
+  Query,
+  Request,
+  UseGuards,
+  UseInterceptors,
+  ParseIntPipe,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { UpdatePasswordDto } from './user.dto';
+
 @ApiTags('User Module')
 @Controller('user')
 export class UserController {
@@ -21,10 +35,7 @@ export class UserController {
   }
 
   @Get('/')
-  async getUser(
-    @Body()
-    data,
-  ): Promise<User[]> {
+  async getUser(@Body() data): Promise<User[]> {
     return this.userService.getAllUser(data);
   }
 
@@ -77,5 +88,32 @@ export class UserController {
     return this.userService.deleteUser({
       id: id,
     });
+  }
+
+  // --Auth Section--
+
+  // Adding auth
+  @UseGuards(JwtAuthGuard)
+  @ApiSecurity('access-key')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('me')
+  public async me(@Request() req) {
+    return new RenderUser(req.user);
+  }
+
+
+  @UseGuards(JwtAuthGuard)
+  @ApiSecurity('access-key')
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Put('update/password')
+  public async updatePassword(
+    @Request() req,
+    @Body()
+    updatePasswordDto: UpdatePasswordDto,
+  ) {
+    await this.userService.updatePassword(updatePasswordDto, req.user.id);
+    return {
+      message: 'password_update_success',
+    };
   }
 }

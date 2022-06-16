@@ -3,9 +3,15 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as paillierBigint from 'paillier-bigint';
 import * as Carbon from 'carbonjs';
-import { Routes, Route, Link, useRoutes, useNavigate, Navigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from 'react-router-dom';
 import Alert from './Alert';
 import * as bcrypt from 'bcryptjs';
+import Login from './Login';
 
 function Register(props) {
   const [amount, setAmount] = useState('');
@@ -16,7 +22,8 @@ function Register(props) {
   const [message, setMessage] = useState('');
   const [display, setDispaly] = useState('');
   const [state, setState] = useState('');
- 
+  const location = useLocation();
+  const login = '';
 
   async function paillier() {
     //   serialize BigInt to Store
@@ -55,6 +62,7 @@ function Register(props) {
       .post('http://localhost:3000/user', {
         address,
         initialDeposit,
+        login,
         name,
         sK,
         pK,
@@ -70,40 +78,35 @@ function Register(props) {
   async function onSubmit(e) {
     e.preventDefault();
     if (!name || !amount || !address) {
-      setDispaly('true')
-      setMessage('FIll The fields')
-      return
+      setDispaly('true');
+      setMessage('FIll The fields');
+      return;
     }
-    if (pass!== cpassword) {
-      setDispaly('true')
-      setMessage('Passwords Do Not Match')
-      return
+    if (pass !== cpassword) {
+      setDispaly('true');
+      setMessage('Passwords Do Not Match');
+      return;
     } else {
       try {
         paillier();
       } catch (error) {
-        setDispaly('true')
-        setMessage(error.response)
+        setDispaly('true');
+        setMessage(error.response);
       }
       setAddress('');
       setAmount('');
       setName('');
       setPassword('');
       setcPassword('');
-      
-      return useNavigate("/login")
+      location.push('/login');
     }
    
   }
 
+
   return (
-    
     <div className="container">
-      <Alert
-          color=" alert alert-danger"
-          message={message}
-          display={display}
-        />
+      <Alert color=" alert alert-danger" message={message} display={display} />
       <h3 className="text-center">Register New User</h3>
       <form className="add-form" onSubmit={onSubmit}>
         <div className="form-group">
@@ -120,7 +123,7 @@ function Register(props) {
             type="number"
             className="form-control"
             placeholder="Enter Account Number"
-            pattern=''
+            pattern=""
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
