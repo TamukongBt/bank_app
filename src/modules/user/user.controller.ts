@@ -21,21 +21,24 @@ import {
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdatePasswordDto } from './user.dto';
 
 @ApiTags('User Module')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService,private readonly jwtService: JwtService,) {}
 
-  @Get(':id')
-  async getUserId(@Param('id') id: string): Promise<User> {
-    return this.userService.getUser({ id: id });
+  @Get(':token')
+  async getUserId(@Param('token') token: string): Promise<User> {
+    const user = this.jwtService.decode(token) as User;
+    return this.userService.getUser({ id: user.id });
   }
 
   @Get('/')
   async getUser(@Body() data): Promise<User[]> {
+    
     return this.userService.getAllUser(data);
   }
 

@@ -1,35 +1,110 @@
 import React from 'react';
 import { useState } from 'react';
 import * as paillierBigint from 'paillier-bigint';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as bigint from './BigInt';
 import Alert from './Alert';
+import axios from 'axios';
+import big from './BigInt';
 
 function Deposit({ onDeposit }) {
+  var CryptoJS = require('crypto-js');
+  const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
-  const [deposit, setDeposit] = useState('');
+  const [accno, setAccno] = useState('');
+  const [user, setUser] = useState('');
   const [message, setMessage] = useState('');
   const [display, setDispaly] = useState('');
 
-  const onSubmit = (e) => {
+  // clear on success
+  const clearField = () => {
+    setAddress('');
+    setAmount('');
+    setAccno('');
+    navigate('/');
+  };
+
+  //   Deserialize BigInt to Store
+  function deserialize(value) {
+    const json = JSON.parse(value, (key, value) => {
+      if (typeof value === 'string' && value.startsWith('BIGINT::')) {
+        return BigInt(value.substr(8));
+      }
+      return value;
+    });
+    return json;
+  }
+
+  React.useEffect(() => {
+    const userToken = localStorage.getItem('AuthUser');
+    if (!userToken) {
+      navigate('/login');
+    }
+    axios
+      .get(`http://localhost:3000/user/` + userToken)
+      .then(function (response) {
+        setUser(response.data);
+      });
+  }, [navigate]);
+
+  async function onSubmit(e) {
     e.preventDefault();
-    if (!amount) {
+    if (!amount || !address) {
       setDispaly('true');
-      setMessage('Account Compromised');
+      setMessage('Fill All Fields');
       return;
     } else {
-     
-      const current = bigint.deserialize(deposit)
-      const check_current = bigint.deserialize(deposit)
-      if (current != check_current) {
-        
-      } else{
-        const key = bigint.deserialize(key)
-        const enc_amt = key.encrypt(Number(amount))
+      if (accno == '') {
+        accno = user.accountNo;
       }
-      
-      
+      // fetch private key
+      var bytes = CryptoJS.AES.decrypt(user.sK, 'milkman');
+      const sK_plain = bytes.toString(CryptoJS.enc.Utf8);
+      const privatekey = deserialize(sK_plain);
+      const publickey = deserialize(user.pK);
+
+      // other details
+      const userId = user.id;
+      const sender = user.name;
+      const reciever = user.name;
+      const type = 'DEPOSIT';
+
+      // decrypt blockchain data
+      const current = privatekey.paillierBigint.decrypt(user.data);
+
+      const check_current = bigint.deserialize(amount);
+      if (current != check_current) {
+      } else {
+        const enc_amt = publickey.paillierBigint.encrypt(Number(amount));
+        const total = big.serialize(publickey.addition(enc_amt, current));
+        // put info in blockchain
+        const trans = [address, type, sender, reciever, total, userId,];
+        const transaction = publickey.paillierBigint.encrypt(JSON.stringify(trans));
+
+        try {
+          const response = await axios.post(
+            'http://localhost:3000/transactions',
+            {
+              address,
+              type,
+              sender,
+              reciever,
+              total,
+              userId,
+              user,
+            },
+          );
+          console.log(response.data);
+
+          if (response.data.success) {
+            clearField();
+          }
+        } catch (error) {
+          console.log('error', error);
+        }
+      }
+
       // let c1 = publicKey.encrypt(m1);
       // let c2 = publicKey.encrypt(m2);
       // let encryptedSum = publicKey.addition(c1, c2);
@@ -38,13 +113,13 @@ function Deposit({ onDeposit }) {
       setAddress('');
       setAmount('');
     }
-  };
+  }
 
   return (
     <div className="container">
       <h3 className="text-center">Deposit Some Money</h3>
-      <Alert color=" alert alert-danger" message={message} display={display} />
-      <form className="add-form" onSubmit={onSubmit}>
+        <Alert color=" alert alert-danger" message={message} display={display} />
+        <form className="add-form" onSubmit={onSubmit}>
         <div className="formControl">
           <input
             type="number"
@@ -58,7 +133,16 @@ function Deposit({ onDeposit }) {
           <input
             type="text"
             className="form-control"
-            placeholder="Enter Address Number"
+            placeholder={user.accountNo}
+            value={accno}
+            onChange={(e) => setAccno(e.target.value)}
+          />
+        </div>
+        <div className="formControl">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Branch Name"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />

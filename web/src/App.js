@@ -10,6 +10,7 @@ import Register from './component/Register';
 import Login from './component/Login';
 
 export default function App() {
+  
   return (
     <div className="App">
       <Header />
@@ -36,7 +37,6 @@ function Home() {
     }
     axios.get(`http://localhost:3000/transactions/`+ userToken).then(function (response) {
       setTransactions(response.data);
-      console.log(response.data);
     });
   }, [navigate]);
 

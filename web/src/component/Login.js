@@ -78,6 +78,7 @@ function Login() {
           Login
         </button>
       </form>
+      <p>Are you a new user? <Link to="/register">Register</Link></p>
     </div>
   );
 }

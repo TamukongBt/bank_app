@@ -12,7 +12,6 @@ import {
 } from 'react-router-dom';
 import Alert from './Alert';
 import * as bcrypt from 'bcryptjs';
-import * as bigint from './BigInt';
 
 function Register(props) {
   const [amount, setAmount] = useState('');
@@ -25,14 +24,29 @@ function Register(props) {
   const [state, setState] = useState('');
   const navigate = useNavigate();
 
+  function serialize(value) {
+    const json = JSON.stringify(value, (key, value) =>
+      typeof value === 'bigint' ? `BIGINT::${value}` : value,
+    );
+    return json;
+  }
+
   async function paillier() {
-   
     const { publicKey, privateKey } = await paillierBigint.generateRandomKeys(
       2048,
     );
-    // register db
-    const pK = bigint.serialize(publicKey);
-    const sK = bigint.serialize(privateKey);
+    const sK = serialize(privateKey);
+    const pK = serialize(publicKey);
+    //Encrypt private key
+    var CryptoJS = require('crypto-js');
+
+    // Encrypt
+    var ciphertext = CryptoJS.AES.encrypt(
+      JSON.stringify({ sK }),
+      'milkman',
+    ).toString();
+
+    // Hash Passworrd
     const salt = bcrypt.genSaltSync(10);
     const password = bcrypt.hashSync(pass, salt);
 
@@ -40,35 +54,36 @@ function Register(props) {
     const date = Carbon.parse(Date.now());
     const initialDeposit = Number(amount);
 
+    // register db
+
     try {
-      const response = await axios
-      .post('http://localhost:3000/auth/register', {
+      const response = await axios.post('http://localhost:3000/auth/register', {
         accountNo: address,
         initialDeposit,
         name,
-        sK,
+        sK: ciphertext,
         pK,
         date,
         password,
-      })
+      });
+      console.log(response.data);
 
       if (response.data.success) {
         clearField();
       }
-    
     } catch (error) {
-      console.log('error', error)
+      console.log('error', error);
     }
   }
 
   const clearField = () => {
     setAddress('');
-  setAmount('');
-  setName('');
-  setPassword('');
-  setcPassword('');
+    setAmount('');
+    setName('');
+    setPassword('');
+    setcPassword('');
     navigate('/login');
-  }
+  };
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -84,14 +99,11 @@ function Register(props) {
     } else {
       try {
         paillier();
-       
-        
       } catch (error) {
-        console.log(error.message, error, error.response)
+        console.log(error.message, error, error.response);
         setMessage(error.message);
         setDispaly('true');
       }
-      
     }
   }
 
