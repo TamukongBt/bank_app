@@ -1,13 +1,12 @@
-import { Injectable, HttpException, HttpStatus} from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
 import { User, Prisma } from '@prisma/client';
-import {CreateUserDto, LoginUserDto, UpdatePasswordDto} from "./user.dto";
-import {compare, hash} from 'bcrypt'
+import { CreateUserDto, LoginUserDto, UpdatePasswordDto } from './user.dto';
+import { compare, hash } from 'bcrypt';
 
 interface FormatLogin extends Partial<User> {
-  login: string
+  login: string;
 }
-
 
 @Injectable()
 export class UserService {
@@ -28,8 +27,6 @@ export class UserService {
       where: userWhereUniqueInput,
     });
   }
-
-
 
   async getAllUser(params: {
     skip?: number;
@@ -80,90 +77,66 @@ export class UserService {
       return false;
     }
   }
-  async loginUser(data: any): Promise<{ user: User; token: string }> {
-    const { address } = data;
-    const user = await this.prisma.user.findFirst({
-      where: { address },
-    });
-    if (!user) {
-      throw new Error('User does not exixts');
-    }
-    return { user, token: JSON.stringify(user) };
-  }
 
-
-
-  // Password check 
+  // Password check
   //use by user module to change user password
-  async updatePassword(payload: UpdatePasswordDto, id: string): 
-  Promise<User> {
+  async updatePassword(payload: UpdatePasswordDto, id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
-        where: {id}
+      where: { id },
     });
     if (!user) {
-        throw new HttpException("invalid_credentials",  
-            HttpStatus.UNAUTHORIZED);
+      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
     }
     // compare passwords
-    const areEqual = await compare(payload.old_password,
-                              user.password);
+    const areEqual = await compare(payload.old_password, user.password);
     if (!areEqual) {
-        throw new HttpException("invalid_credentials", 
-           HttpStatus.UNAUTHORIZED);
+      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
     }
     return await this.prisma.user.update({
-        where: {id},
-        data: {password:  await hash(payload.new_password, 10)}
+      where: { id },
+      data: { password: await hash(payload.new_password, 10) },
     });
-}
-//use by auth module to register user in database
-// async create(userDto: CreateUserDto): Promise<any> {
+  }
+  //use by auth module to register user in database
+  // async create(userDto: CreateUserDto): Promise<any> {
 
-//     // // check if the user exists in the db
-//     const userInDb = await this.prisma.user.findFirst({
-//         where: {login: userDto.login}
-//     });
-//     if (userInDb) {
-//         throw new HttpException("user_already_exist", 
-//            HttpStatus.CONFLICT);
-//     }
-//     return await this.prisma.user.create({
-//         ...(userDto),
-//         password: await hash(userDto.password, 10)
-//     });
-// }
-//use by auth module to login user
-async findByLogin({login, password}: LoginUserDto):  
-                               Promise<FormatLogin> {
+  //     // // check if the user exists in the db
+  //     const userInDb = await this.prisma.user.findFirst({
+  //         where: {login: userDto.login}
+  //     });
+  //     if (userInDb) {
+  //         throw new HttpException("user_already_exist",
+  //            HttpStatus.CONFLICT);
+  //     }
+  //     return await this.prisma.user.create({
+  //         ...(userDto),
+  //         password: await hash(userDto.password, 10)
+  //     });
+  // }
+  //use by auth module to login user
+  async findByLogin({ accountNo, password }: LoginUserDto): Promise<User> {
     const user = await this.prisma.user.findFirst({
-        where: {login: login}
+      where: { accountNo: accountNo },
     });
 
     if (!user) {
-        throw new HttpException("invalid_credentials",  
-              HttpStatus.UNAUTHORIZED);
+      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
     }
 
     // compare passwords
     const areEqual = await compare(password, user.password);
 
     if (!areEqual) {
-        throw new HttpException("invalid_credentials",
-            HttpStatus.UNAUTHORIZED);
+      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
     }
 
-    const {password: p, ...rest} = user;
-    return rest;
-}
+    return user;
+  }
 
-//use by auth module to get user in database
-async findByPayload({login}: any): Promise<any> {
+  //use by auth module to get user in database
+  async findByPayload({ accountNo }: any): Promise<any> {
     return await this.prisma.user.findFirst({
-        where: {login} 
+      where: { accountNo },
     });
+  }
 }
-
-
-} 
-
-

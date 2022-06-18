@@ -8,6 +8,7 @@ import {
   Route,
   Link,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import Alert from './Alert';
 import * as bcrypt from 'bcryptjs';
@@ -22,8 +23,7 @@ function Register(props) {
   const [message, setMessage] = useState('');
   const [display, setDispaly] = useState('');
   const [state, setState] = useState('');
-  const location = useLocation();
-  const login = '';
+  const navigate = useNavigate();
 
   async function paillier() {
     //   serialize BigInt to Store
@@ -58,21 +58,34 @@ function Register(props) {
     const date = Carbon.parse(Date.now());
     const initialDeposit = Number(amount);
 
-    await axios
-      .post('http://localhost:3000/user', {
-        address,
+    try {
+      const response = await axios
+      .post('http://localhost:3000/auth/register', {
+        accountNo: address,
         initialDeposit,
-        login,
         name,
         sK,
         pK,
         date,
         password,
       })
-      .catch((error) => {
-        console.log(error);
-        return error.response;
-      });
+
+      if (response.data.success) {
+        clearField();
+      }
+    
+    } catch (error) {
+      console.log('error', error)
+    }
+  }
+
+  const clearField = () => {
+    setAddress('');
+  setAmount('');
+  setName('');
+  setPassword('');
+  setcPassword('');
+    navigate('/login');
   }
 
   async function onSubmit(e) {
@@ -89,16 +102,14 @@ function Register(props) {
     } else {
       try {
         paillier();
+       
+        
       } catch (error) {
+        console.log(error.message, error, error.response)
+        setMessage(error.message);
         setDispaly('true');
-        setMessage(error.response);
       }
-      setAddress('');
-      setAmount('');
-      setName('');
-      setPassword('');
-      setcPassword('');
-      location.push('/login');
+      
     }
    
   }

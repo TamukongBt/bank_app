@@ -57,20 +57,6 @@ export class UserController {
     }
   }
 
-  @Post('/login')
-  async loginUser(
-    @Body()
-    data,
-  ): Promise<{ user: User; token: string }> {
-    try {
-      const { user, token } = await this.userService.loginUser(data);
-
-      return { user, token };
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
   @Put(':id')
   async updateUser(
     @Param('id') id: string,
@@ -93,14 +79,13 @@ export class UserController {
   // --Auth Section--
 
   // Adding auth
-  @UseGuards(JwtAuthGuard)
-  @ApiSecurity('access-key')
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Get('me')
-  public async me(@Request() req) {
-    return new RenderUser(req.user);
-  }
-
+  // @UseGuards(JwtAuthGuard)
+  // @ApiSecurity('access-key')
+  // @UseInterceptors(ClassSerializerInterceptor)
+  // @Get('me')
+  // public async me(@Request() req) {
+  //   return new RenderUser(req.user);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @ApiSecurity('access-key')
