@@ -12,7 +12,7 @@ import {
 } from 'react-router-dom';
 import Alert from './Alert';
 import * as bcrypt from 'bcryptjs';
-import Login from './Login';
+import * as bigint from './BigInt';
 
 function Register(props) {
   const [amount, setAmount] = useState('');
@@ -26,31 +26,13 @@ function Register(props) {
   const navigate = useNavigate();
 
   async function paillier() {
-    //   serialize BigInt to Store
-    function serialize(value) {
-      const json = JSON.stringify(value, (key, value) =>
-        typeof value === 'bigint' ? `BIGINT::${value}` : value,
-      );
-      return json;
-    }
-
-    //   Deserialize BigInt to Store
-    function deserialize(value) {
-      const json = JSON.parse(value, (key, value) => {
-        if (typeof value === 'string' && value.startsWith('BIGINT::')) {
-          return BigInt(value.substr(8));
-        }
-        return value;
-      });
-      return json;
-    }
-
+   
     const { publicKey, privateKey } = await paillierBigint.generateRandomKeys(
       2048,
     );
     // register db
-    const pK = serialize(publicKey);
-    const sK = serialize(privateKey);
+    const pK = bigint.serialize(publicKey);
+    const sK = bigint.serialize(privateKey);
     const salt = bcrypt.genSaltSync(10);
     const password = bcrypt.hashSync(pass, salt);
 
@@ -111,9 +93,7 @@ function Register(props) {
       }
       
     }
-   
   }
-
 
   return (
     <div className="container">
