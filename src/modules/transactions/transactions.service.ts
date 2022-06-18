@@ -33,6 +33,13 @@ export class TransactionsService {
     });
   }
 
+  async getAllTransactionsByUserId(userId): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: { userId },
+      include: { user: true },
+    });
+  }
+
   async createTransaction(
     data: Prisma.TransactionCreateInput,
   ): Promise<Transaction> {

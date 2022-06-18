@@ -13,7 +13,7 @@ function Login() {
     password: '', // required
   });
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!formData.number || !formData.password) {
       setDispaly('true');
@@ -21,25 +21,28 @@ function Login() {
       return;
     } else {
       try {
-        fetch('http://localhost:3000/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        })
-          .then((res) => res.json())
-          .then((data) => console.log(data.user));
+
+        const response = await axios
+      .post('http://localhost:3000/auth/login', {
+        accountNo: formData.number,
+        password: formData.password,
+      })
+        
+        console.log(response)
+
+        if (response.data.token) {
+        localStorage.setItem('AuthUser', response.data.token)
+        navigate('/');
+      }
+        
       } catch (error) {
         setDispaly('true');
-        setMessage(error.response);
+        setMessage(error.message);
+        console.log(error)
       }
     }
   }
 
-  function redirect(e) {
-    e.preventDefault();
-    // location.push('/');
-    navigate('/');
-  }
 
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -50,7 +53,7 @@ function Login() {
      
       <h1>Login Form</h1>
       <Alert color=" alert alert-danger" message={message} display={display} />
-      <form className="add-form" onSubmit={(e) => redirect(e)}>
+      <form className="add-form" >
         <div className="form-group">
           <input
             type="text"
@@ -71,7 +74,7 @@ function Login() {
             onChange={(e) => handleChange(e)}
           ></input>
         </div>
-        <button className="btn btn-block btn-primary" type="submit">
+        <button className="btn btn-block btn-primary" onClick={handleSubmit}>
           Login
         </button>
       </form>

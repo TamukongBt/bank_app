@@ -120,14 +120,20 @@ export class UserService {
     });
 
     if (!user) {
-      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('et53ertere', HttpStatus.UNAUTHORIZED);
     }
 
     // compare passwords
     const areEqual = await compare(password, user.password);
 
     if (!areEqual) {
-      throw new HttpException('invalid_credentials', HttpStatus.UNAUTHORIZED);
+      throw new HttpException(
+        {
+          status: HttpStatus.UNAUTHORIZED,
+          error: `Unauthorized User`,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return user;

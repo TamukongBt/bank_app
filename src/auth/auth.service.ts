@@ -51,7 +51,9 @@ export class AuthService {
   }
 
   private _createToken(user: User): any {
-    const Authorization = this.jwtService.sign(user);
+    const Authorization = this.jwtService.sign(user, {
+      secret: process.env.SECRETKEY,
+    });
     return Authorization;
   }
 

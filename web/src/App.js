@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 import Deposit from './component/Deposit';
@@ -27,15 +27,18 @@ export default function App() {
 
 function Home() {
   const [transactions, setTransactions] = React.useState('');
+  const navigate = useNavigate();
+
   React.useEffect(() => {
-    axios.get('http://localhost:3000/transactions').then(function (response) {
+    const userToken = localStorage.getItem("AuthUser")
+    if (!userToken) {
+      navigate('/login')
+    }
+    axios.get(`http://localhost:3000/transactions/`+ userToken).then(function (response) {
       setTransactions(response.data);
       console.log(response.data);
     });
-
-    {
-    }
-  });
+  }, [navigate]);
 
   function deleteTrans(id) {
     setTransactions(
