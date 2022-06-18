@@ -7,6 +7,7 @@ import Withdraw from './component/Withdraw';
 import { Header } from './component/Header';
 import Transactions from './component/Transactions';
 import Register from './component/Register';
+import Login from './component/Login';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/deposit" element={<Deposit />} />
         <Route path="/withdraw" element={<Withdraw />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </div>
   );
@@ -60,6 +62,8 @@ function Home() {
         <Link to="/withdraw">Withdraw</Link>
         <br />
         <Link to="/register">Register</Link>
+        <br />
+        <Link to="/login">Login</Link>
       </main>
     </>
   );
