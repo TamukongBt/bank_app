@@ -7,9 +7,9 @@ function Transaction({transaction,onDelete}) {
   return (
     
         <div className='task' onClick={()=>onDelete(transaction.id)}>
-       <p> Amount: {transaction.amount} </p>
-       <p> Sender:{transaction.address} </p>
-       <p> Transaction:{transaction.type} </p>
+       <span> Amount: {transaction.amount} </span>
+       <span> Sender:{transaction.sender} </span>
+       <span> Transaction:{transaction.type} </span>
 
     </div>
     
