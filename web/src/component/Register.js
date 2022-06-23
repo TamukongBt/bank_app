@@ -49,12 +49,25 @@ function Register(props) {
     // Hash Passworrd
     const salt = bcrypt.genSaltSync(10);
     const password = bcrypt.hashSync(pass, salt);
+    const isLogin = false
 
     // Hash password and check if matches
     const date = Carbon.parse(Date.now());
-    const initialDeposit = Number(amount);
+    const initialDeposit = CryptoJS.AES.encrypt(
+      JSON.stringify({ amount}),
+      'milkman',
+    ).toString();
+    console.log(initialDeposit)
 
     // register db
+    console.log(address,
+      initialDeposit,
+      name,
+      ciphertext,
+      pK,
+      date,
+      password,)
+    
 
     try {
       const response = await axios.post('http://localhost:3000/auth/register', {
@@ -66,7 +79,7 @@ function Register(props) {
         date,
         password,
       });
-      console.log(response.data);
+      console.log(response);
 
       if (response.data.success) {
         clearField();

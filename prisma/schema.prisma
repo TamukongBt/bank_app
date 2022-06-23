@@ -14,7 +14,7 @@ model User {
   id             String        @id @default(uuid())
   isLogin        Boolean       @default(false)
   name           String
-  initialDeposit Int
+  initialDeposit String
   sK             String
   pK             String
   accountNo      String        @unique
@@ -28,9 +28,7 @@ model Transaction {
   id              String  @id @default(uuid())
   address         String
   transactionType String
-  sender          String
-  reciever        String
-  amount          Int
+  transid         String
   date            DateTime
   userId          String?
   user            User?   @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
