@@ -47,15 +47,20 @@ function Transaction({transaction,user,total,count}) {
    var dt = total[count]
    const enc =deserialize(dt)
     const amounts = privateKey.decrypt(enc)
-
+    const date = Carbon.parse(transaction[6]).format("YYYY MM-DD");
+    function numberWithCommas(x) {
+      return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+    }
+    const bill = numberWithCommas(Number(amounts))
 
 
   return (
     
         <div className='task' >
-       <span> Amount: {Number(amounts)} </span>
-       <span> Sender:{transaction[0]} </span>
-       <span> Transaction:{transaction[1]} </span>
+       <span className='prepend'> Amount : {bill} FCFA </span><br/>
+       <span> Sender :{transaction[0]} </span><br/>
+       <span> Type :{transaction[1]} </span><br/>
+       <span> Date :{date} </span>
 
     </div>
     

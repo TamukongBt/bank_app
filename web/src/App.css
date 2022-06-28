@@ -13,6 +13,12 @@
   }
 }
 
+.prepend-danger{
+  width:10px;
+  color:red;
+  height:auto;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
