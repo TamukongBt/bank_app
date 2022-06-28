@@ -179,7 +179,7 @@ const Withdraw = ({ onWithdraw }) => {
    const sK = deserialize(privateK.sK);
    const pK = deserialize(users.pK);
    const publicKey = new paillier.PublicKey(pK.n, pK.g);
-   const privateKey = new pail  lier.PrivateKey(sK.lambda, sK.mu, publicKey);
+   const privateKey = new paillier.PrivateKey(sK.lambda, sK.mu, publicKey);
    if (records.length == 0) {
     var bytes = CryptoJS.AES.decrypt(users.initialDeposit, 'milkman');
     const current = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
