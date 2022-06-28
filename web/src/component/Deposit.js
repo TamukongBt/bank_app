@@ -9,20 +9,18 @@ import { BANKING_APP_ABI, BANKING_APP_ADDRESS } from '../config';
 import CryptoJS from 'crypto-js';
 import Carbon from 'carbonjs';
 
-function Deposit({ onDeposit }) {
+function Deposit() {
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
-  const [depot, setDepot] = useState('');
   const [address, setAddress] = useState('');
   const [accno, setAccno] = useState('');
+  const [balance, setBalance] = useState('');
   const [user, setUser] = useState('');
   const [account, setAccount] = useState('');
-  const [transid,setTransid] = useState('');
   const [transactions, setTransactions] = useState('');
   const [t_Count, setTransCount] = useState('');
   const [message, setMessage] = useState('');
   const [display, setDispaly] = useState('');
-
 
   // clear on success
   const clearField = () => {
@@ -60,24 +58,36 @@ function Deposit({ onDeposit }) {
       .get(`http://localhost:3000/user/` + userToken)
       .then(function (response) {
         setUser(response.data);
+        if (!transactions.length) {
+          axios
+            .get(`http://localhost:3000/transactions/` + userToken)
+            .then(function (t_response) {
+              setTransactions(t_response.data);
+              getbalance(response.data, t_response.data);
+            });
+        }
       });
-  }, [navigate]);
+      loadWeb3();
+  
+    }, [user,transactions]);
 
-  React.useEffect(() => {
-    loadWeb3();
-    const userToken = localStorage.getItem('AuthUser');
-    if (!userToken) {
-      navigate('/login');
-    }
-    axios
-      .get(`http://localhost:3000/transactions/` + userToken)
-      .then(function (response) {
-        setTransactions(response.data);
-      });
+  async function getbalance(users, records) {
+    //  fetch private key
+    var bytes = CryptoJS.AES.decrypt(users.sK, 'milkman');
+    const sK_plain = bytes.toString(CryptoJS.enc.Utf8);
+    const privateK = deserialize(sK_plain);
+    const sK = deserialize(privateK.sK);
 
-    return () => {};
-  }, [t_Count]);
-
+    const pK = deserialize(users.pK);
+    const publicKey = new paillier.PublicKey(pK.n, pK.g);
+    const privateKey = new paillier.PrivateKey(sK.lambda, sK.mu, publicKey);
+    var last = records.length - 1;
+    const transcount = Number(records[last].transid);
+    const enc_details = await loadData(transcount);
+    const dec_details1 = deserialize(enc_details);
+    var current = dec_details1;
+    setBalance(Number(privateKey.decrypt(current)));
+  }
   async function loadWeb3() {
     if (window.ethereum) {
       window.web3 = new Web3(window.ethereum);
@@ -91,7 +101,7 @@ function Deposit({ onDeposit }) {
     }
   }
 
-  async function loadBlockchainData() {
+  async function transcounter() {
     const web3 = window.web3;
     await web3.eth
       .getAccounts()
@@ -106,17 +116,11 @@ function Deposit({ onDeposit }) {
       BANKING_APP_ADDRESS,
     );
     const count = await transfers.methods.transCount().call();
-    setTransCount(count);
-    const transactionss = [];
-    for (var i = 1; i <= t_Count; i++) {
-      const task = await transfers.methods.transfers(i).call();
-      transactionss.push(task);
-    }
-    
-    return transactionss;
+    console.log(count);
+    return count;
   }
 
-  async function createTransaction(content, sender, reciever) {
+  async function loadData(data) {
     const web3 = window.web3;
     await web3.eth
       .getAccounts()
@@ -130,11 +134,30 @@ function Deposit({ onDeposit }) {
       BANKING_APP_ABI,
       BANKING_APP_ADDRESS,
     );
+    const count = await transfers.methods.getTrans(data).call();
 
-    console.log(account)
-    await transfers.methods.createTransaction(content, sender, reciever).send({ from: account[0] });
+    return count.sender;
   }
-  
+
+  async function createTransaction(content, sender, reciever) {
+    const web3 = window.web3;
+    await web3.eth
+      .getAccounts()
+      .then(function (accounts) {
+        setAccount(accounts);
+      })
+      .catch(function (err) {
+        alert(err);
+      });
+    const transfers = new web3.eth.Contract(
+      BANKING_APP_ABI,
+      BANKING_APP_ADDRESS,
+    );
+
+    await transfers.methods
+      .createTransaction(content, sender, reciever)
+      .send({ from: account[0] });
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -162,52 +185,44 @@ function Deposit({ onDeposit }) {
       const reciever = user.name;
       const type = 'DEPOSIT';
       const date = Carbon.parse(Date.now());
-      // const transactions_chain = await loadBlockchainData();
       const enc_amt = publicKey.encrypt(BigInt(amount));
-      
+      var depot = 0;
+
       if (transactions.length == 0) {
         var bytes = CryptoJS.AES.decrypt(user.initialDeposit, 'milkman');
         const current = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
-        console.log(current.amount)
-        setDepot(Number(current.amount)) 
-        
+        console.log(current.amount);
+        var m1 = BigInt(current.amount);
+        depot = await publicKey.encrypt(m1);
+        setBalance(Number(current.amount));
       } else {
-        var last = transactions.length - 1
-        // console.log(transactions)
-        const transcount = Number(transactions[last].transid)
-        const enc_details = await loadBlockchainData();
-        
-        const dec_details0=enc_details[transcount].sender
-        const dec_details1=deserialize(deserialize(dec_details0))
-        
-        
-        console.log(dec_details1)
-        console.log(privateKey.decrypt(dec_details1))
-        setDepot(dec_details1)
-      }
-      console.log(depot)
-      const depott = BigInt(depot);
-      // var m1 = publicKey.encrypt(BigInt(200))
-      // var m2 = publicKey.encrypt(BigInt(300))
-      // const mt=publicKey.addition(m1,m2);
-      console.log(privateKey.decrypt(enc_amt))
+        var last = transactions.length - 1;
+        const transcount = Number(transactions[last].transid);
+        const enc_details = await loadData(transcount);
+        const dec_details1 = deserialize(enc_details);
 
-      const bigtotal =publicKey.addition(enc_amt,depott);
-      // const total =serialize(bigtotal);
-      // const tortal =deserialize(total);
-      const bigtotaldec =privateKey.decrypt(bigtotal);
-      const bigtotaldec2 =privateKey.decrypt(depot);
-      console.log(bigtotaldec, bigtotaldec2)
-      const trans = '[address, type, sender, reciever, total, userId]';
-      const transaction = publicKey.encrypt(JSON.stringify(trans));
-      const content = serialize(transaction)
-      return
-      // await createTransaction(content, total, userId);
+        console.log(dec_details1);
+        console.log(privateKey.decrypt(dec_details1));
+        setBalance(Number(privateKey.decrypt(dec_details1)));
+
+        depot = dec_details1;
+      }
+
+      const bigtotal = await publicKey.addition(depot, enc_amt);
+      console.log(privateKey.decrypt(bigtotal));
+      const total = serialize(bigtotal);
+      const trans = [address, type, sender, reciever, total, userId];
+      const content = CryptoJS.AES.encrypt(
+        JSON.stringify(trans),
+        user.sK,
+      ).toString();
+      await createTransaction(content, total, userId);
 
       // GettransId
-      const all = await loadBlockchainData();
-      var transid = all.length
-      
+      const all = await transcounter();
+      console.log(all);
+      var transid = all.toString();
+
       // put info in blockchain
       try {
         const response = await axios.post(
@@ -228,14 +243,7 @@ function Deposit({ onDeposit }) {
       } catch (error) {
         console.log('error', error);
       }
-
-      // let c1 = publicKey.encrypt(m1);
-      // let c2 = publicKey.encrypt(m2);
-      // let encryptedSum = publicKey.addition(c1, c2);
-      // let sum = privateKey.decrypt(encryptedSum);
-      // onDeposit({ address, amount });
-      // setAddress('');
-      // setAmount('');
+      clearField();
     }
   }
 
@@ -277,13 +285,12 @@ function Deposit({ onDeposit }) {
           value="Deposit"
         />
       </form>
+      <h3>Balance: {balance} FCFA</h3>
       <Link to="/">Home</Link>
       <br />
       <Link to="/deposit">Deposit</Link>
       <br />
       <Link to="/withdraw">Withdraw</Link>
-      <br />
-      <Link to="/register">Register</Link>
     </div>
   );
 }
