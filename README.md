@@ -46,8 +46,7 @@ $ yarn run start:prod
 
 ## Stay in touch
 
-- Author - [Teneng Clifford](https://github.com/cliffordten)
-
+- Author - Tamukong Brian
 ## License
 
 Nest is [MIT licensed](LICENSE).
